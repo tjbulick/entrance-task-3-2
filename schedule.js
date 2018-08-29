@@ -1,12 +1,12 @@
 let data = require('./data'); // входные данные вынесены в отдельный файл для удобства
 
 // функция, которая добавляет интервал работы девайса в результирующий объект
-let pushInterval = (resultObject, id, from, to) => {
+let pushInterval = (resultObject, device, from, to) => {
 	let iterations = to - from + 1;
 
 	for (let i = 0; i < iterations; i++) {
 		let iterationHour = from + i; // час, в массив которого мы будем пушить айди девайса
-		resultObject.schedule[iterationHour].push(id); // вставляем в конец массива айди девайса
+		resultObject.schedule[iterationHour].push(device.id); // вставляем в конец массива айди девайса
 	};
 };
 
@@ -23,7 +23,7 @@ let initResultObject = (resultObject) => {
 };
 
 // функция, которая считает энергию, потраченную конкретным прибором
-let getConsumedEnergyByDevice = (resultObject, id) => {};
+let getSpentMoneyByDevice = (rates, device, from, to) => {};
 
 // функция, которая в конце выполнения скрипта записывает детали потраченной энергии
 let generateConsumedEnergyDetails = (resultObject) => {};
@@ -32,6 +32,49 @@ let comparePowerConsumptionReversed = (device1, device2) => {
 	return device2.powerConsumption - device1.powerConsumption;
 };
 
+let checkMaxPower = (maxPower, schedule, device, from, to) => {};
+
+let searchInterval = (dataObject, resultObject, device) => {
+	let interval = {};
+	let start, end;
+
+	switch (device.mode) {
+		case 'day':
+			start = 7;
+			end = 20;
+
+			let passes = end - start + 1 - device.duration + 1; // кол-во проходов
+			let minSpent = {
+				value: getSpentMoneyByDevice(dataObject.rates, device, start, start + device.duration - 1),
+				from: start,
+				to: start + device.duration - 1
+			};
+			// проходимся по всем элементам, кромер первого(первый присвоен минимуму)
+			for (let i = 1; i < passes; i++) {
+				if ((getSpentMoneyByDevice(dataObject.rates, device, start + i, start + i + device.duration - 1) < minSpent.value) && (checkMaxPower(data.maxPower, result.schedule, device, start + i, start + i + device.duration - 1))) {
+					minSpent.value = getSpentMoneyByDevice(dataObject.rates, device, start + i, start + i + device.duration - 1);
+					minSpent.from = start + i;
+					minSpent.to = start + i + device.duration - 1;
+				};
+			};
+
+			interval.from = minSpent.from;
+			interval.to = minSpent.to;
+			break;
+		case 'night':
+			// start = 21;
+			// end = 6;
+			break;
+		case undefined:
+			start = 0;
+			end = 23;
+			break;
+		default:
+		console.log('invalid device mode');
+	};
+
+	return interval;
+};
 
 // основная функция, принимает объект с данными и возвращает объект с расписанием
 let getSchedule = (data) => {
@@ -39,9 +82,9 @@ let getSchedule = (data) => {
 	initResultObject(result); // инициализируем в нём нужные свойства
 
 	// сначала проверим есть ли приборы, работающие 24 часа
-	data.devices.forEach((device, i, devices) => {
+	data.devices.forEach(device => {
 		if (device.duration === 24) {
-			pushInterval(result, device.id, 0, 23); // добавляем прибор в расписание
+			pushInterval(result, device, 0, 23);
 		};
 	});
 
@@ -52,6 +95,12 @@ let getSchedule = (data) => {
 	data.devices.forEach(device => device.powerConsumption = (device.power / 1000 * device.duration).toFixed(4));
 	data.devices.sort(comparePowerConsumptionReversed);
 	console.log(data.devices);
+
+	// ищем интервал работы для каждого устройства
+	data.devices.forEach(device => {
+		let interval = searchInterval(data, result, device);
+		pushInterval(result, device, interval.from, interval.to);
+	});
 
 	return result;
 };
