@@ -28,6 +28,10 @@ let getConsumedEnergyByDevice = (resultObject, id) => {};
 // функция, которая в конце выполнения скрипта записывает детали потраченной энергии
 let generateConsumedEnergyDetails = (resultObject) => {};
 
+let comparePowerConsumptionReversed = (device1, device2) => {
+	return device2.powerConsumption - device1.powerConsumption;
+};
+
 
 // основная функция, принимает объект с данными и возвращает объект с расписанием
 let getSchedule = (data) => {
@@ -43,6 +47,11 @@ let getSchedule = (data) => {
 
 	// отфильтруем данные от уже добавленных приборов
 	data.devices = data.devices.filter(device => device.duration !== 24);
+
+	// считаем кВт·ч каждого прибора, сортируем по этому параметру
+	data.devices.forEach(device => device.powerConsumption = (device.power / 1000 * device.duration).toFixed(4));
+	data.devices.sort(comparePowerConsumptionReversed);
+	console.log(data.devices);
 
 	return result;
 };
