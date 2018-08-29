@@ -1,11 +1,12 @@
+let data = require('./data'); // входные данные вынесены в отдельный файл для удобства
+
 // функция, которая добавляет интервал работы девайса в результирующий объект
 let pushInterval = (resultObject, id, from, to) => {
 	let iterations = to - from + 1;
 
 	for (let i = 0; i < iterations; i++) {
 		let iterationHour = from + i; // час, в массив которого мы будем пушить айди девайса
-		let pushLine = `resultObject.schedule['${iterationHour}'].push(id);`; // строка кода, в которой происходит сам пуш
-		eval(pushLine);
+		resultObject.schedule[iterationHour].push(id); // вставляем в конец массива айди девайса
 	};
 };
 
@@ -13,8 +14,7 @@ let pushInterval = (resultObject, id, from, to) => {
 let initResultObject = (resultObject) => {
 	resultObject.schedule = {};
 	for (let i = 0; i < 24; i++) {
-		let initLine = `resultObject.schedule['${i}'] = [];`;
-		eval(initLine);
+		resultObject.schedule[i] = [];
 	};
 
 	resultObject.consumedEnergy = {};
@@ -22,12 +22,29 @@ let initResultObject = (resultObject) => {
 	resultObject.consumedEnergy.devices = {};
 };
 
+// функция, которая считает энергию, потраченную конкретным прибором
+let getConsumedEnergyByDevice = (resultObject, id) => {};
+
+// функция, которая в конце выполнения скрипта записывает детали потраченной энергии
+let generateConsumedEnergyDetails = (resultObject) => {};
+
+
 // основная функция, принимает объект с данными и возвращает объект с расписанием
 let getSchedule = (data) => {
 	let result = {}; // объявим результирующий объект
 	initResultObject(result); // инициализируем в нём нужные свойства
 
+	// сначала проверим есть ли приборы, работающие 24 часа
+	data.devices.forEach((device, i, devices) => {
+		if (device.duration === 24) {
+			pushInterval(result, device.id, 0, 23); // добавляем прибор в расписание
+		};
+	});
+
+	// отфильтруем данные от уже добавленных приборов
+	data.devices = data.devices.filter(device => device.duration !== 24);
+
 	return result;
 };
 
-console.log(getSchedule()); // проверяем инициализированный массив
+console.log(getSchedule(data)); // проверяем инициализированный массив
