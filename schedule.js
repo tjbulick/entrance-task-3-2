@@ -36,25 +36,24 @@ let getSpentMoneyByDevice = (rates, device, from, to) => {
 			endRate = j;
 		};
 	});
-	console.log(beginRate, endRate);
 
 	if (endRate - beginRate === 0) {
-		value += (to - from + 1)*rates[beginRate].value;
+		value += (to - from + 1) * rates[beginRate].value * device.power / 1000;
 	} else {
 		for (let k = 0; k < endRate - beginRate + 1; k++) {
 			if (beginRate + k === beginRate) {
 				// если это первый промежуток тарифов в интервале
-				value += (rates[beginRate + k].to - from)*rates[beginRate + k];
+				value += (rates[beginRate + k].to - from) * rates[beginRate + k] * device.power / 1000;
 			};
 
 			if ((beginRate + k > beginRate) && (beginRate + k < endRate)) {
 				// если это промежуточный промежуток тарифов в интервале
-				value += (rates[beginRate + k].to - rates[beginRate + k].from)*rates[beginRate + k];
+				value += (rates[beginRate + k].to - rates[beginRate + k].from) * rates[beginRate + k] * device.power / 1000;
 			};
 
 			if (beginRate + k === endRate) {
 				// если это последний промежуток тарифов в интервале
-				value += (to - rates[beginRate + k].from + 1)*rates[beginRate + k];
+				value += (to - rates[beginRate + k].from + 1) * rates[beginRate + k] * device.power / 1000;
 			};
 		};
 	};
@@ -146,6 +145,5 @@ let getSchedule = (data) => {
 	return result;
 };
 
-// console.log(util.inspect(getSchedule(data), { breakLength: 200 })); // проверяем выходные данные
-console.log(getSpentMoneyByDevice(data.rates, data.devices[2], 0, 2));
+console.log(util.inspect(getSchedule(data), { breakLength: 200 })); // проверяем выходные данные
 
