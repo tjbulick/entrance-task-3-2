@@ -68,6 +68,24 @@ let comparePowerConsumptionReversed = (device1, device2) => {
 	return device2.powerConsumption - device1.powerConsumption;
 };
 
+let compareRates = (rate1, rate2) => {
+	return rate1.from - rate2.from;
+};
+
+let sortRates = (rates) => {
+	rates.forEach(rate => {
+		if (rate.from > rate.to) {
+			let tempRate = {};
+			tempRate.from = 0;
+			tempRate.to = rate.to;
+			rate.to = 24;
+			tempRate.value = rate.value;
+			rates.push(tempRate);
+		};
+	});
+	rates.sort(compareRates);
+};
+
 let checkMaxPower = (maxPower, schedule, device, from, to) => {
 	return true;
 };
@@ -134,6 +152,10 @@ let getSchedule = (data) => {
 	data.devices.forEach(device => device.powerConsumption = (device.power / 1000 * device.duration).toFixed(4));
 	data.devices.sort(comparePowerConsumptionReversed);
 	console.log(data.devices);
+
+	// сортируем тарифы от 0 до 23 часов
+	sortRates(data.rates);
+	console.log(data.rates);
 
 	// ищем интервал работы для каждого устройства
 	data.devices.forEach(device => {
