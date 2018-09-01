@@ -43,17 +43,17 @@ let getSpentMoneyByDevice = (rates, device, from, to) => {
 		for (let k = 0; k < endRate - beginRate + 1; k++) {
 			if (beginRate + k === beginRate) {
 				// если это первый промежуток тарифов в интервале
-				value += (rates[beginRate + k].to - from) * rates[beginRate + k] * device.power / 1000;
+				value += (rates[beginRate + k].to - from) * rates[beginRate + k].value * device.power / 1000;
 			};
 
 			if ((beginRate + k > beginRate) && (beginRate + k < endRate)) {
 				// если это промежуточный промежуток тарифов в интервале
-				value += (rates[beginRate + k].to - rates[beginRate + k].from) * rates[beginRate + k] * device.power / 1000;
+				value += (rates[beginRate + k].to - rates[beginRate + k].from) * rates[beginRate + k].value * device.power / 1000;
 			};
 
 			if (beginRate + k === endRate) {
 				// если это последний промежуток тарифов в интервале
-				value += (to - rates[beginRate + k].from + 1) * rates[beginRate + k] * device.power / 1000;
+				value += (to - rates[beginRate + k].from + 1) * rates[beginRate + k].value * device.power / 1000;
 			};
 		};
 	};
@@ -95,7 +95,7 @@ let searchInterval = (dataObject, resultObject, device) => {
 	let start, end;
 
 	switch (device.mode) {
-		case 'day':
+		case 'day': {
 			start = 7;
 			end = 20;
 
@@ -117,14 +117,86 @@ let searchInterval = (dataObject, resultObject, device) => {
 
 			interval.from = minSpent.from;
 			interval.to = minSpent.to;
+		};
 			break;
-		case 'night':
-			// start = 21;
-			// end = 6;
+		case 'night': {
+			// первый промежуток ночи это с 21 до 23
+			start = 21;
+			end = 23;
+
+			let passes = end - start + 1 - device.duration + 1; // кол-во проходов
+			let minSpent = {
+				value: getSpentMoneyByDevice(dataObject.rates, device, start, start + device.duration - 1),
+				from: start,
+				to: start + device.duration - 1
+			};
+
+			// проходимся по всем элементам, кромер первого(первый присвоен минимуму)
+			for (let i = 1; i < passes; i++) {
+				if ((getSpentMoneyByDevice(dataObject.rates, device, start + i, start + i + device.duration - 1) < minSpent.value) && (checkMaxPower(dataObject.maxPower, resultObject.schedule, device, start + i, start + i + device.duration - 1))) {
+					minSpent.value = getSpentMoneyByDevice(dataObject.rates, device, start + i, start + i + device.duration - 1);
+					minSpent.from = start + i;
+					minSpent.to = start + i + device.duration - 1;
+				};
+			};
+
+			interval.from = minSpent.from;
+			interval.to = minSpent.to;
+			interval.value = minSpent.value;
+		};
+
+		{
+			// второй промежуток ночи это с 0 до 6
+			start = 0;
+			end = 6;
+
+			let passes = end - start + 1 - device.duration + 1; // кол-во проходов
+			let minSpent = {
+				value: getSpentMoneyByDevice(dataObject.rates, device, start, start + device.duration - 1),
+				from: start,
+				to: start + device.duration - 1
+			};
+
+			// проходимся по всем элементам, кромер первого(первый присвоен минимуму)
+			for (let i = 1; i < passes; i++) {
+				if ((getSpentMoneyByDevice(dataObject.rates, device, start + i, start + i + device.duration - 1) < minSpent.value) && (checkMaxPower(dataObject.maxPower, resultObject.schedule, device, start + i, start + i + device.duration - 1))) {
+					minSpent.value = getSpentMoneyByDevice(dataObject.rates, device, start + i, start + i + device.duration - 1);
+					minSpent.from = start + i;
+					minSpent.to = start + i + device.duration - 1;
+				};
+			};
+
+			if (minSpent.value < interval.value) {
+				interval.from = minSpent.from;
+				interval.to = minSpent.to;
+				delete interval.value;
+			};
+		};
 			break;
-		case undefined:
+		case undefined: {
 			start = 0;
 			end = 23;
+
+			// эта часть кода скопирована из case 'day', поскольку она также ищет на непрерывном интервале
+			let passes = end - start + 1 - device.duration + 1; // кол-во проходов
+			let minSpent = {
+				value: getSpentMoneyByDevice(dataObject.rates, device, start, start + device.duration - 1),
+				from: start,
+				to: start + device.duration - 1
+			};
+
+			// проходимся по всем элементам, кромер первого(первый присвоен минимуму)
+			for (let i = 1; i < passes; i++) {
+				if ((getSpentMoneyByDevice(dataObject.rates, device, start + i, start + i + device.duration - 1) < minSpent.value) && (checkMaxPower(dataObject.maxPower, resultObject.schedule, device, start + i, start + i + device.duration - 1))) {
+					minSpent.value = getSpentMoneyByDevice(dataObject.rates, device, start + i, start + i + device.duration - 1);
+					minSpent.from = start + i;
+					minSpent.to = start + i + device.duration - 1;
+				};
+			};
+
+			interval.from = minSpent.from;
+			interval.to = minSpent.to;
+		};
 			break;
 		default:
 		console.log('invalid device mode');
