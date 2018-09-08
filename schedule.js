@@ -72,7 +72,7 @@ let compareRates = (rate1, rate2) => {
 	return rate1.from - rate2.from;
 };
 
-let sortRates = (rates) => {
+let transformRates = (rates) => {
 	rates.forEach(rate => {
 		if (rate.from > rate.to) {
 			let tempRate = {};
@@ -92,7 +92,8 @@ let checkMaxPower = (devices, maxPower, schedule, device, from, to) => {
 	for (let rowCounter = 0; rowCounter < to - from + 1; rowCounter++) {
 		let powerSum = 0;
 		for (let positionCounter = 0; positionCounter < schedule[`${from + rowCounter}`].length; positionCounter++) {
-			powerSum += devices.filter(device => schedule[`${from + rowCounter}`][positionCounter] === device.id).power;
+			powerSum += devices.filter(obj => schedule[`${from + rowCounter}`][positionCounter] === obj.id)[0].power;
+			console.log(powerSum);
 		};
 
 		if (powerSum + device.power > maxPower) {
@@ -115,7 +116,7 @@ let searchInterval = (dataObject, resultObject, device) => {
 			let passes = end - start + 1 - device.duration + 1; // кол-во проходов
 			let minSpent = {};
 
-			// проходимся по всем элементам, кромер первого(первый присвоен минимуму)
+			// проходимся по всем элементам
 			for (let i = 0; i < passes; i++) {
 				if ((minSpent.value === undefined) && (checkMaxPower(dataObject.devices, dataObject.maxPower, resultObject.schedule, device, start + i, start + i + device.duration - 1))) {
 					minSpent.value = getSpentMoneyByDevice(dataObject.rates, device, start + i, start + i + device.duration - 1);
@@ -142,7 +143,7 @@ let searchInterval = (dataObject, resultObject, device) => {
 			let passes = end - start + 1 - device.duration + 1; // кол-во проходов
 			let minSpent = {};
 
-			// проходимся по всем элементам, кромер первого(первый присвоен минимуму)
+			// проходимся по всем элементам
 			for (let i = 0; i < passes; i++) {
 				if ((minSpent.value === undefined) && (checkMaxPower(dataObject.devices, dataObject.maxPower, resultObject.schedule, device, start + i, start + i + device.duration - 1))) {
 					minSpent.value = getSpentMoneyByDevice(dataObject.rates, device, start + i, start + i + device.duration - 1);
@@ -170,7 +171,7 @@ let searchInterval = (dataObject, resultObject, device) => {
 			let passes = end - start + 1 - device.duration + 1; // кол-во проходов
 			let minSpent = {};
 
-			// проходимся по всем элементам, кромер первого(первый присвоен минимуму)
+			// проходимся по всем элементам
 			for (let i = 0; i < passes; i++) {
 				if ((minSpent.value === undefined) && (checkMaxPower(dataObject.devices, dataObject.maxPower, resultObject.schedule, device, start + i, start + i + device.duration - 1))) {
 					minSpent.value = getSpentMoneyByDevice(dataObject.rates, device, start + i, start + i + device.duration - 1);
@@ -200,7 +201,7 @@ let searchInterval = (dataObject, resultObject, device) => {
 			let passes = end - start + 1 - device.duration + 1; // кол-во проходов
 			let minSpent = {};
 
-			// проходимся по всем элементам, кромер первого(первый присвоен минимуму)
+			// проходимся по всем элементам
 			for (let i = 0; i < passes; i++) {
 				if ((minSpent.value === undefined) && (checkMaxPower(dataObject.devices, dataObject.maxPower, resultObject.schedule, device, start + i, start + i + device.duration - 1))) {
 					minSpent.value = getSpentMoneyByDevice(dataObject.rates, device, start + i, start + i + device.duration - 1);
@@ -231,15 +232,21 @@ let getSchedule = (data) => {
 	let result = {}; // объявим результирующий объект
 	initResultObject(result); // инициализируем в нём нужные свойства
 
+	// значения свойства pushed девайса:
+	// undefined: мы еще не работали с девайсом
+	// true: девайс уже запушен в расписание
+	// false: девайс уже был запушен, но мы решили что-то изменить(например, подвинуть его из-за невлезания другого прибора)
+
 	// сначала проверим есть ли приборы, работающие 24 часа
 	data.devices.forEach(device => {
 		if (device.duration === 24) {
 			pushInterval(result, device, 0, 23);
+			device.pushed = true;
 		};
 	});
 
-	// отфильтруем данные от уже добавленных приборов
-	data.devices = data.devices.filter(device => device.duration !== 24);
+	// отфильтруем данные от приборов, работающих 24 часа в сутки
+	// data.devices = data.devices.filter(device => device.duration !== 24);
 
 	// считаем кВт·ч каждого прибора, сортируем по этому параметру
 	data.devices.forEach(device => device.powerConsumption = (device.power / 1000 * device.duration).toFixed(4));
@@ -247,14 +254,17 @@ let getSchedule = (data) => {
 	console.log(data.devices);
 
 	// сортируем тарифы от 0 до 23 часов
-	sortRates(data.rates);
+	transformRates(data.rates);
 	console.log(data.rates);
 
 	// ищем интервал работы для каждого устройства
 	data.devices.forEach(device => {
-		let interval = searchInterval(data, result, device);
-		// console.log(interval);
-		pushInterval(result, device, interval.from, interval.to);
+		if (device.pushed === undefined) {
+			let interval = searchInterval(data, result, device);
+			console.log(interval);
+			pushInterval(result, device, interval.from, interval.to);
+			device.pushed = true;
+		};
 	});
 
 	return result;
