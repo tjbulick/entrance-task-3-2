@@ -92,8 +92,7 @@ let checkMaxPower = (devices, maxPower, schedule, device, from, to) => {
 	for (let rowCounter = 0; rowCounter < to - from + 1; rowCounter++) {
 		let powerSum = 0;
 		for (let positionCounter = 0; positionCounter < schedule[`${from + rowCounter}`].length; positionCounter++) {
-			powerSum += devices.filter(obj => schedule[`${from + rowCounter}`][positionCounter] === obj.id)[0].power;
-			console.log(powerSum);
+			powerSum += devices.find(obj => schedule[`${from + rowCounter}`][positionCounter] === obj.id).power;
 		};
 
 		if (powerSum + device.power > maxPower) {
@@ -244,9 +243,6 @@ let getSchedule = (data) => {
 			device.pushed = true;
 		};
 	});
-
-	// отфильтруем данные от приборов, работающих 24 часа в сутки
-	// data.devices = data.devices.filter(device => device.duration !== 24);
 
 	// считаем кВт·ч каждого прибора, сортируем по этому параметру
 	data.devices.forEach(device => device.powerConsumption = (device.power / 1000 * device.duration).toFixed(4));
