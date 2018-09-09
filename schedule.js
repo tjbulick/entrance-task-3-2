@@ -64,7 +64,13 @@ let getSpentMoneyByDevice = (rates, device, from, to) => {
 // функция, которая в конце выполнения скрипта записывает детали потраченной энергии
 let writeConsumedEnergyDetails = (resultObject, device, interval) => {
 	resultObject.consumedEnergy.devices[`${device.id}`] = interval.value;
+
 	resultObject.consumedEnergy.value += interval.value;
+
+	// решаем проблему с неточным хранением чисел по стандарту IEEE 754
+	// сложение в целых числах не решило проблему, поскольку 37.4175 * 10000 => 374174.99999999994
+	// здесь делаем приведение к числу, чтобы в следующий раз коррекнтно вызвать метод .toFixed()
+	resultObject.consumedEnergy.value = +(resultObject.consumedEnergy.value).toFixed(3);
 };
 
 let comparePowerConsumptionReversed = (device1, device2) => {
