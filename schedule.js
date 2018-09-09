@@ -62,7 +62,10 @@ let getSpentMoneyByDevice = (rates, device, from, to) => {
 };
 
 // функция, которая в конце выполнения скрипта записывает детали потраченной энергии
-let generateConsumedEnergyDetails = (resultObject) => {};
+let writeConsumedEnergyDetails = (resultObject, device, interval) => {
+	resultObject.consumedEnergy.devices[`${device.id}`] = interval.value;
+	resultObject.consumedEnergy.value += interval.value;
+};
 
 let comparePowerConsumptionReversed = (device1, device2) => {
 	return device2.powerConsumption - device1.powerConsumption;
@@ -132,6 +135,7 @@ let searchInterval = (dataObject, resultObject, device) => {
 
 			interval.from = minSpent.from;
 			interval.to = minSpent.to;
+			interval.value = minSpent.value;
 		};
 			break;
 		case 'night': {
@@ -188,7 +192,7 @@ let searchInterval = (dataObject, resultObject, device) => {
 			if (minSpent.value < interval.value) {
 				interval.from = minSpent.from;
 				interval.to = minSpent.to;
-				delete interval.value;
+				interval.value = minSpent.value;
 			};
 		};
 			break;
@@ -217,6 +221,7 @@ let searchInterval = (dataObject, resultObject, device) => {
 
 			interval.from = minSpent.from;
 			interval.to = minSpent.to;
+			interval.value = minSpent.value;
 		};
 			break;
 		default:
@@ -236,16 +241,8 @@ let getSchedule = (data) => {
 	// true: девайс уже запушен в расписание
 	// false: девайс уже был запушен, но мы решили что-то изменить(например, подвинуть его из-за невлезания другого прибора)
 
-	// сначала проверим есть ли приборы, работающие 24 часа
-	data.devices.forEach(device => {
-		if (device.duration === 24) {
-			pushInterval(result, device, 0, 23);
-			device.pushed = true;
-		};
-	});
-
 	// считаем кВт·ч каждого прибора, сортируем по этому параметру
-	data.devices.forEach(device => device.powerConsumption = (device.power / 1000 * device.duration).toFixed(4));
+	data.devices.forEach(device => device.powerConsumption = +(device.power / 1000 * device.duration).toFixed(4));
 	data.devices.sort(comparePowerConsumptionReversed);
 	console.log(data.devices);
 
@@ -257,9 +254,11 @@ let getSchedule = (data) => {
 	data.devices.forEach(device => {
 		if (device.pushed === undefined) {
 			let interval = searchInterval(data, result, device);
-			console.log(interval);
+			interval.value = +interval.value.toFixed(4);
+			// console.log(interval);
 			pushInterval(result, device, interval.from, interval.to);
 			device.pushed = true;
+			writeConsumedEnergyDetails(result, device, interval);
 		};
 	});
 
