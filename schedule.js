@@ -7,7 +7,7 @@ let pushInterval = (resultObject, device, from, to) => {
 
 	for (let i = 0; i < iterations; i++) {
 		let iterationHour = from + i; // час, в массив которого мы будем пушить айди девайса
-		resultObject.schedule[iterationHour].push(device.id); // вставляем в конец массива айди девайса
+		resultObject.schedule[iterationHour].push(device.id);
 	};
 };
 
@@ -61,15 +61,14 @@ let getSpentMoneyByDevice = (rates, device, from, to) => {
 	return value;
 };
 
-// функция, которая в конце выполнения скрипта записывает детали потраченной энергии
+// функция, которой передается прибор для записи подробнотей
 let writeConsumedEnergyDetails = (resultObject, device, interval) => {
 	resultObject.consumedEnergy.devices[`${device.id}`] = interval.value;
 
 	resultObject.consumedEnergy.value += interval.value;
 
-	// решаем проблему с неточным хранением чисел по стандарту IEEE 754
-	// сложение в целых числах не решило проблему, поскольку 37.4175 * 10000 => 374174.99999999994
-	// здесь делаем приведение к числу, чтобы в следующий раз коррекнтно вызвать метод .toFixed()
+	// проблему с неточным хранением чисел по стандарту IEEE 754 решаем с помощью округления до трех знаков
+	// делаем приведение к числу, чтобы в следующий раз коррекнтно вызвать метод .toFixed()
 	resultObject.consumedEnergy.value = +(resultObject.consumedEnergy.value).toFixed(3);
 };
 
@@ -206,7 +205,6 @@ let searchInterval = (dataObject, resultObject, device) => {
 			start = 0;
 			end = 23;
 
-			// эта часть кода скопирована из case 'day', поскольку она также ищет на непрерывном интервале
 			let passes = end - start + 1 - device.duration + 1; // кол-во проходов
 			let minSpent = {};
 
@@ -231,7 +229,7 @@ let searchInterval = (dataObject, resultObject, device) => {
 		};
 			break;
 		default:
-		console.log('invalid device mode');
+		throw new Error('invalid device mode');
 	};
 
 	return interval;
@@ -242,7 +240,7 @@ let getSchedule = (data) => {
 	let result = {}; // объявим результирующий объект
 	initResultObject(result); // инициализируем в нём нужные свойства
 
-	// значения свойства pushed девайса:
+	// значения свойства pushed каждого девайса:
 	// undefined: мы еще не работали с девайсом
 	// true: девайс уже запушен в расписание
 	// false: девайс уже был запушен, но мы решили что-то изменить(например, подвинуть его из-за невлезания другого прибора)
@@ -271,5 +269,5 @@ let getSchedule = (data) => {
 	return result;
 };
 
-console.log(util.inspect(getSchedule(data), { breakLength: 200 })); // проверяем выходные данные
+console.log(util.inspect(getSchedule(data), { breakLength: 200 }));
 
