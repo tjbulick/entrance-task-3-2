@@ -245,11 +245,11 @@ let getSchedule = (data) => {
 	// считаем кВт·ч каждого прибора, сортируем по этому параметру
 	data.devices.forEach(device => device.powerConsumption = +(device.power / 1000 * device.duration).toFixed(4));
 	data.devices.sort(comparePowerConsumptionReversed);
-	console.log(data.devices);
+	// console.log(data.devices);
 
 	// сортируем тарифы от 0 до 23 часов
 	transformRates(data.rates);
-	console.log(data.rates);
+	// console.log(data.rates);
 
 	// ищем интервал работы для каждого устройства
 	data.devices.forEach(device => {
