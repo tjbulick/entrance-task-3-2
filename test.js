@@ -5,7 +5,7 @@ const assert = require('assert');
 
 let result = getSchedule(data);
 
-console.log(util.inspect(result, { breakLength: 200 }));
+// console.log(util.inspect(result, { breakLength: 200 }));
 
 // совпадает ли consumedEnergy.value
 {
@@ -72,3 +72,5 @@ console.log(util.inspect(result, { breakLength: 200 }));
 		assert.equal(result.schedule[i].length, 2, '12 to 24 hours are wrong');
 	};
 };
+
+console.log('tests passed');
