@@ -1,6 +1,3 @@
-let data = require('./data'); // входные данные вынесены в отдельный файл для удобства
-const util = require('util');
-
 // функция, которая добавляет интервал работы девайса в результирующий объект
 let pushInterval = (resultObject, device, from, to) => {
 	let iterations = to - from + 1;
@@ -269,5 +266,4 @@ let getSchedule = (data) => {
 	return result;
 };
 
-console.log(util.inspect(getSchedule(data), { breakLength: 200 }));
-
+module.exports = getSchedule;
